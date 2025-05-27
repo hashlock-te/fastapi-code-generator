@@ -142,6 +142,7 @@ def generate_code(
         dump_resolve_reference_action=data_model_types.dump_resolve_reference_action,
         custom_template_dir=model_template_dir,
         target_python_version=python_version,
+        field_constraints = True,
     )
 
     with chdir(output_dir):
