@@ -95,6 +95,7 @@ class Argument(CachedPropertyModel):
     default_value: Optional[UsefulStr] = None
     field: Union[DataModelField, list[DataModelField], None] = None
     required: bool
+    alias: UsefulStr = None
 
     def __str__(self) -> str:
         return self.argument
@@ -366,17 +367,22 @@ class OpenAPIParser(OpenAPIModelParser):
             required=parameters.required or parameters.in_ == ParameterLocation.path,
         )
 
+        alias = None
         if orig_name != name:
             if parameters.in_:
-                param_is = parameters.in_.value.lower().capitalize()
-                self.imports_for_fastapi.append(
-                    Import(from_='fastapi', import_=param_is)
-                )
-                default: Optional[str] = (
-                    f"{param_is}({'...' if field.required else repr(schema.default)}, alias='{orig_name}')"
-                )
+                # param_is = parameters.in_.value.lower().capitalize()
+                # print(f"default for {name}: {default}")
+                # self.imports_for_fastapi.append(
+                #     Import(from_='fastapi', import_=param_is)
+                # )
+                # default: Optional[str] = (
+                #     f"{param_is}({'...' if field.required else repr(schema.default)}, alias='{orig_name}')"
+                # )
+                default: Optional[str] = None
+                alias = UsefulStr(orig_name)
         else:
             default = repr(schema.default) if schema.has_default else None
+        
         self.imports_for_fastapi.append(field.imports)
         self.data_types.append(field.data_type)
         return Argument(
@@ -386,6 +392,7 @@ class OpenAPIParser(OpenAPIModelParser):
             default_value=schema.default,
             required=field.required,
             field=field,
+            alias=alias,
         )
 
     def get_arguments(self, snake_case: bool, path: List[str]) -> str:
@@ -501,7 +508,8 @@ class OpenAPIParser(OpenAPIModelParser):
         path: List[str],
     ) -> Dict[Union[str, int], Dict[str, DataType]]:
         data_types = super().parse_responses(name, responses, path)  # type: ignore[arg-type]
-        status_code_200 = data_types.get('200')
+        status_code_200 = data_types.get('200') or data_types.get('201')
+            
         if status_code_200:
             data_type = list(status_code_200.values())[0]
             if data_type:
@@ -513,7 +521,7 @@ class OpenAPIParser(OpenAPIModelParser):
         self._temporary_operation['response'] = type_hint
         return_types = {type_hint: data_type}
         for status_code, additional_responses in data_types.items():
-            if status_code != '200' and additional_responses:  # 200 is processed above
+            if status_code != '200' and status_code != '201' and additional_responses:  # 200/201 are processed above
                 data_type = list(additional_responses.values())[0]
                 if data_type:
                     self.data_types.append(data_type)
@@ -521,7 +529,8 @@ class OpenAPIParser(OpenAPIModelParser):
                 self._temporary_operation.setdefault('additional_responses', {})[
                     status_code
                 ] = {'model': type_hint}
-                return_types[type_hint] = data_type
+                # Don't include non-success in return types
+                # return_types[type_hint] = data_type
         if len(return_types) == 1:
             return_type = next(iter(return_types.values()))
         else:
