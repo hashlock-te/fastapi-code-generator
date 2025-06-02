@@ -143,6 +143,7 @@ def generate_code(
         custom_template_dir=model_template_dir,
         target_python_version=python_version,
         field_constraints = True,
+        allow_population_by_field_name = True,
     )
 
     with chdir(output_dir):
