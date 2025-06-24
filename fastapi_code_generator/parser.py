@@ -370,6 +370,7 @@ class OpenAPIParser(OpenAPIModelParser):
         alias = None
         if orig_name != name:
             if parameters.in_:
+                # Do not generate FastAPI types (eg: `Query`, `Path`, etc.) for parameters
                 # param_is = parameters.in_.value.lower().capitalize()
                 # print(f"default for {name}: {default}")
                 # self.imports_for_fastapi.append(
