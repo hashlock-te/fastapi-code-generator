@@ -117,6 +117,7 @@ def generate_code(
     specify_tags: Optional[str] = None,
     output_model_type: DataModelType = DataModelType.PydanticBaseModel,
     python_version: PythonVersion = PythonVersion.PY_39,
+    strict_nullable: bool = False,
 ) -> None:
     if not model_path:
         model_path = MODEL_PATH
@@ -144,6 +145,7 @@ def generate_code(
         target_python_version=python_version,
         field_constraints = True,
         allow_population_by_field_name = True,
+        strict_nullable=strict_nullable,
     )
 
     with chdir(output_dir):
